@@ -1,4 +1,4 @@
-// server/routes/events.js — Full CRUD for Events
+// server/routes/events.js — Full CRUD for Events with image upload support
 const express = require('express');
 const pool    = require('../db/pool');
 const { authenticate, requireAdmin } = require('../middleware/auth');
@@ -45,19 +45,22 @@ router.get('/:id', authenticate, async (req, res) => {
   }
 });
 
-// POST /api/events — create event (admin only)
+// POST /api/events — create event (admin only) WITH image_url support
 router.post('/', authenticate, requireAdmin, async (req, res) => {
-  const { title, category, description, date, time, venue, organizer, max_attendees, status } = req.body;
+  const { title, category, description, date, time, venue, organizer, max_attendees, status, image_url } = req.body;
+  console.log('Creating event with image_url:', image_url); // Debug log
+  
   if (!title || !category || !date || !time || !venue)
     return res.status(400).json({ error: 'title, category, date, time and venue are required' });
 
   try {
     const result = await pool.query(
-      `INSERT INTO events (title, category, description, date, time, venue, organizer, max_attendees, status, created_by)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *`,
+      `INSERT INTO events (title, category, description, date, time, venue, organizer, max_attendees, status, created_by, image_url)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
       [title, category, description || null, date, time, venue, organizer || null,
-       max_attendees || 100, status || 'upcoming', req.user.id]
+       max_attendees || 100, status || 'upcoming', req.user.id, image_url || null]
     );
+    console.log('Event created with image_url:', result.rows[0].image_url); // Debug log
     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error(err);
@@ -65,15 +68,17 @@ router.post('/', authenticate, requireAdmin, async (req, res) => {
   }
 });
 
-// PUT /api/events/:id — update event (admin only)
+// PUT /api/events/:id — update event (admin only) WITH image_url support
 router.put('/:id', authenticate, requireAdmin, async (req, res) => {
-  const { title, category, description, date, time, venue, organizer, max_attendees, status } = req.body;
+  const { title, category, description, date, time, venue, organizer, max_attendees, status, image_url } = req.body;
+  console.log('Updating event with image_url:', image_url); // Debug log
+  
   try {
     const result = await pool.query(
       `UPDATE events SET title=$1, category=$2, description=$3, date=$4, time=$5,
-       venue=$6, organizer=$7, max_attendees=$8, status=$9, updated_at=NOW()
-       WHERE id=$10 RETURNING *`,
-      [title, category, description, date, time, venue, organizer, max_attendees, status, req.params.id]
+       venue=$6, organizer=$7, max_attendees=$8, status=$9, image_url=$10, updated_at=NOW()
+       WHERE id=$11 RETURNING *`,
+      [title, category, description, date, time, venue, organizer, max_attendees, status, image_url || null, req.params.id]
     );
     if (!result.rows.length) return res.status(404).json({ error: 'Event not found' });
     res.json(result.rows[0]);

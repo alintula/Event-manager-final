@@ -8,6 +8,7 @@ const authRouter      = require('./routes/auth');
 const eventsRouter    = require('./routes/events');
 const attendeesRouter = require('./routes/attendees');
 const filesRouter     = require('./routes/files');
+const commentsRouter  = require('./routes/comments');
 
 const app  = express();
 const PORT = process.env.PORT || 5000;
@@ -25,6 +26,7 @@ app.use('/api/auth',      authRouter);
 app.use('/api/events',    eventsRouter);
 app.use('/api/attendees', attendeesRouter);
 app.use('/api/files',     filesRouter);
+app.use('/api/comments',  commentsRouter);
 
 // Health check
 app.get('/api/health', (_, res) => res.json({ status: 'ok', timestamp: new Date() }));
